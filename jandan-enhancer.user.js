@@ -77,7 +77,9 @@
         main {
             margin-top: 0 !important;
             padding-top: 28px !important;
-            padding-bottom: 80px !important;
+            padding-bottom: 80px !important; /* 给底部悬浮翻页按钮留出充足的呼吸空间 */
+            padding-right: 85px !important; /* 核心优化：强制右侧留白，防止平板屏幕下被玻璃导航栏遮挡！ */
+            box-sizing: border-box !important;
         }
         .cp-pagenavi, .commentlist, #comments {
             margin-top: 0 !important;
@@ -127,7 +129,7 @@
             box-shadow: none !important; outline: none !important;
         }
 
-        /* --- 悬浮翻页面板 (底部居中) --- */
+        /* --- 悬浮翻页面板 (底部居中 - 已恢复) --- */
         #jd-page-nav {
             position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
             display: flex; gap: 12px; z-index: 9000;
@@ -253,7 +255,7 @@
     document.head.appendChild(style);
 
     // =========================================
-    // 3. 清理页面结构 & 移除广告
+    // 3. 清理页面结构 & 释放布局宽度
     // =========================================
     document.querySelectorAll('.ad-title').forEach(el => {
         const postItem = el.closest('.post-item.row');
@@ -261,21 +263,19 @@
     });
     const memberOverlay = document.evaluate('/html/body/div[1]/div/div[2]/i', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
     if (memberOverlay) memberOverlay.remove();
+
     const mainEl = document.querySelector('main');
     const asideEl = document.querySelector('aside');
     if (mainEl && asideEl) {
-        const mainRect = mainEl.getBoundingClientRect();
-        const asideRect = asideEl.getBoundingClientRect();
-        const totalWidth = asideRect.right - mainRect.left;
         asideEl.remove();
-        mainEl.style.width = totalWidth + 'px';
-        mainEl.style.maxWidth = totalWidth + 'px';
+        // 让内容充满，但被 CSS 里的 padding-right: 85px 限制右边界，防遮挡
+        mainEl.style.width = '100%';
+        mainEl.style.maxWidth = '100%';
         mainEl.style.flex = 'none';
     }
 
     if(mainEl) {
         mainEl.style.marginTop = '0px';
-        mainEl.style.paddingTop = '0px';
     }
 
     // =========================================
@@ -434,9 +434,10 @@
     }
 
     // =========================================
-    // 7. 全局强制渲染翻页 UI 及平滑 DOM 更新
+    // 7. 全局底部分页 UI (恢复为稳定渲染防鬼畜版)
     // =========================================
-    const isExcluded = ['/new/member', '/top', '/new/forum', '/tucao'].some(p => path.startsWith(p));
+    // 将文章详情页(isArticlePage)也加入排除翻页显示的名单
+    const isExcluded = isArticlePage || ['/new/member', '/top', '/new/forum', '/tucao'].some(p => path.startsWith(p));
 
     function updatePaginationUI() {
         if (isExcluded) return;
@@ -445,7 +446,6 @@
         let nextUrl = null;
         let displayPage = null;
 
-        // 【规则1：首页逻辑】
         if (path === '/' || path === '/index.php' || /^\/page\/\d+/.test(path)) {
             let currentPage = 1;
             const match = path.match(/^\/page\/(\d+)/);
@@ -455,8 +455,7 @@
             nextUrl = '/page/' + (currentPage + 1);
             displayPage = currentPage;
         }
-        // 【规则2：其他各大版块 (采用 Hash #page=x 逻辑)】
-        else if (!isArticlePage) {
+        else {
             let activePageEl = document.querySelector('.page-nav .active, .cp-pagenavi .current');
             if (activePageEl) {
                 let num = parseInt(activePageEl.textContent.trim());
@@ -480,27 +479,19 @@
                 }
             }
         }
-        // 【规则3：文章详情页】
-        else {
-            document.querySelectorAll('.post-navigation a, .nav-single a, .post-neighbor-nav a, a[rel="prev"], a[rel="next"]').forEach(a => {
-                let txt = a.textContent.toUpperCase();
-                if (a.rel === 'next' || txt.includes('上一篇') || txt.includes('PREV')) prevUrl = a.href;
-                if (a.rel === 'prev' || txt.includes('下一篇') || txt.includes('NEXT')) nextUrl = a.href;
-            });
-        }
 
         window.jdPrevUrl = prevUrl;
         window.jdNextUrl = nextUrl;
 
-        // 核心修复：只创建一次 DOM，后续仅修改属性，彻底解决重渲染导致的悬停鬼畜问题
+        // 核心修复：只创建一次 DOM，后续仅修改属性
         let pageNav = document.getElementById('jd-page-nav');
         if (!pageNav) {
             pageNav = document.createElement('div');
             pageNav.id = 'jd-page-nav';
             pageNav.innerHTML = `
-                <a class="jd-page-btn jd-page-prev disabled">← PREV</a>
+                <a class="jd-page-btn jd-page-prev disabled">PREV</a>
                 <span class="jd-page-number"></span>
-                <a class="jd-page-btn jd-page-next disabled">NEXT →</a>
+                <a class="jd-page-btn jd-page-next disabled">NEXT</a>
             `;
             document.body.appendChild(pageNav);
         }
@@ -509,7 +500,6 @@
         const nextBtn = pageNav.querySelector('.jd-page-next');
         const numSpan = pageNav.querySelector('.jd-page-number');
 
-        // 平滑更新状态
         if (prevUrl) {
             if (prevBtn.getAttribute('href') !== prevUrl) prevBtn.setAttribute('href', prevUrl);
             prevBtn.classList.remove('disabled');
