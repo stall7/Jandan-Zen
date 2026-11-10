@@ -18,8 +18,12 @@
     // =========================================
     const path = location.pathname;
     const isArticlePage = /^\/p\/\d+/.test(path) || /^\/t\/\d+/.test(path);
+    const isHomePage = path === '/' || path === '/index.php' || /^\/page\/\d+/.test(path);
     if (!isArticlePage) {
         document.documentElement.classList.add('jd-list-page');
+    }
+    if (isHomePage) {
+        document.documentElement.classList.add('jd-home-page');
     }
 
     // =========================================
@@ -27,7 +31,6 @@
     // =========================================
     const navLinks = [
         { name: '首页', url: 'https://jandan.net/' },
-        { name: '问答', url: 'https://jandan.net/qa' },
         { name: '树洞', url: 'https://jandan.net/treehole' },
         { name: '女装', url: 'https://jandan.net/beauty' },
         { name: '随手', url: 'https://jandan.net/ooxx' },
@@ -43,10 +46,11 @@
     // =========================================
     let customHiddenRules = '';
 
-    if (path === '/' || path === '/index.php' || /^\/page\/\d+/.test(path)) {
+    if (isHomePage) {
         customHiddenRules = `
             main > div:first-child { display: none !important; }
             .row.text-center { display: none !important; }
+            a[href="/qa"], a[href^="https://jandan.net/qa"] { display: none !important; }
         `;
     } else if (['/qa', '/treehole', '/beauty', '/ooxx', '/pic'].some(p => path.startsWith(p))) {
         customHiddenRules = '.post { display: none !important; }';
@@ -83,6 +87,78 @@
         }
         .cp-pagenavi, .commentlist, #comments {
             margin-top: 0 !important;
+        }
+
+        /* --- 首页：居中内容列、统一条目节奏并保留舒适留白 --- */
+        .jd-home-page body {
+            overflow-x: hidden;
+        }
+        .jd-home-page main {
+            width: min(100%, 1040px) !important;
+            max-width: 1040px !important;
+            flex: 0 1 1040px !important;
+            margin: 0 auto !important;
+            padding: 24px 32px 104px !important;
+            box-sizing: border-box;
+        }
+        .jd-home-page main > .container,
+        .jd-home-page main > .container-fluid,
+        .jd-home-page #content {
+            width: 100% !important;
+            max-width: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        .jd-home-page .post-item {
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 24px 0 !important;
+            align-items: flex-start !important;
+            gap: 24px;
+        }
+        .jd-home-page .post-item + .post-item {
+            border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
+        }
+        .jd-home-page .post-item img {
+            max-width: 100%;
+            height: auto;
+        }
+        .jd-home-page .post-item h2,
+        .jd-home-page .post-item h3,
+        .jd-home-page .post-item .title {
+            margin-top: 0 !important;
+            margin-bottom: 10px !important;
+            line-height: 1.45 !important;
+        }
+        .jd-home-page .post-item p {
+            margin: 0 0 12px !important;
+            line-height: 1.75 !important;
+        }
+
+        @media (max-width: 720px) {
+            .jd-home-page main {
+                padding: 14px 16px 96px !important;
+            }
+            .jd-home-page .post-item {
+                padding: 18px 0 !important;
+                gap: 14px;
+            }
+            #jd-quick-nav {
+                right: 6px;
+                bottom: 92px;
+                max-height: calc(100vh - 112px);
+                overflow-y: auto;
+            }
+            #jd-page-nav {
+                bottom: 18px;
+                width: calc(100% - 32px);
+                justify-content: center;
+                gap: 8px;
+            }
+            .jd-page-btn {
+                min-width: 0;
+                padding: 9px 16px;
+            }
         }
 
         /* =========================================
