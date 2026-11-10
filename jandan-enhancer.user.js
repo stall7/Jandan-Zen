@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         煎蛋网ZEN
 // @namespace    http://tampermonkey.net/
-// @version      1.0
+// @version      1.1
 // @description  去广告、简化网站元素
 // @author       jasond
 // @match        https://jandan.net/*
@@ -25,6 +25,7 @@
     if (isHomePage) {
         document.documentElement.classList.add('jd-home-page');
     }
+    document.documentElement.classList.add(isArticlePage ? 'jd-article-page' : 'jd-section-page');
 
     // =========================================
     // 1. 定义跳转链接列表
@@ -112,7 +113,8 @@
         .jd-home-page .post-item {
             width: 100% !important;
             margin: 0 !important;
-            padding: 24px 0 !important;
+            padding: 16px 0 !important;
+            min-height: 0 !important;
             align-items: flex-start !important;
             gap: 24px;
         }
@@ -123,11 +125,80 @@
             max-width: 100%;
             height: auto;
         }
+        .jd-home-page .post-item > .col-12 {
+            display: grid;
+            grid-template-columns: 3ch minmax(0, 1fr);
+            gap: 8px 20px;
+            padding: 0 !important;
+            margin: 0 !important;
+            min-height: 0 !important;
+            align-content: start;
+            min-width: 0;
+        }
+        .jd-home-page .post-item > .col-12:has(.post-thumb) {
+            grid-template-columns: 3ch minmax(0, 1fr) 180px;
+        }
+        .jd-home-page .post-item .post-title,
+        .jd-home-page .post-item .post-excerpt,
+        .jd-home-page .post-item .post-tucao,
+        .jd-home-page .post-item .post-comment-count {
+            grid-column: 2;
+            width: auto !important;
+            max-width: 100%;
+            margin: 0 !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            overflow-wrap: anywhere;
+        }
+        .jd-home-page .post-item .post-thumb {
+            display: block !important;
+            position: static !important;
+            grid-column: 3;
+            grid-row: 1 / span 3;
+            width: 100% !important;
+            height: auto !important;
+            margin: 0 !important;
+            align-self: start;
+        }
+        .jd-home-page .post-item .post-thumb img {
+            display: block;
+            width: 100% !important;
+            height: auto !important;
+            max-height: 130px;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+        .jd-home-page .post-item .post-tucao {
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 3;
+            overflow: hidden;
+            line-height: 1.7 !important;
+            margin: 0 !important;
+        }
+        .jd-home-page .post-item .post-comment-count {
+            display: block !important;
+            position: static !important;
+            grid-column: 1;
+            grid-row: 1;
+            align-self: start;
+            justify-self: end;
+            top: auto !important;
+            left: auto !important;
+            right: auto !important;
+            bottom: auto !important;
+            width: auto !important;
+            transform: none !important;
+            font-size: 22px !important;
+            line-height: 1.45 !important;
+            text-align: right;
+            white-space: nowrap;
+        }
         .jd-home-page .post-item h2,
         .jd-home-page .post-item h3,
         .jd-home-page .post-item .title {
             margin-top: 0 !important;
-            margin-bottom: 10px !important;
+            margin-bottom: 0 !important;
             line-height: 1.45 !important;
         }
         .jd-home-page .post-item p {
@@ -140,8 +211,16 @@
                 padding: 14px 16px 96px !important;
             }
             .jd-home-page .post-item {
-                padding: 18px 0 !important;
+                padding: 14px 0 !important;
                 gap: 14px;
+            }
+            .jd-home-page .post-item > .col-12:has(.post-thumb) {
+                grid-template-columns: 3ch minmax(0, 1fr);
+            }
+            .jd-home-page .post-item .post-thumb {
+                grid-column: 2;
+                grid-row: auto;
+                max-width: 180px;
             }
             #jd-quick-nav {
                 right: 6px;
@@ -206,12 +285,25 @@
         }
 
         /* --- 悬浮翻页面板 (底部居中 - 已恢复) --- */
+        .jd-home-page .page-navi-btn { display: none !important; }
+        .jd-side-page {
+            position: fixed; top: 50%; transform: translateY(-50%);
+            z-index: 8999; padding: 12px 18px;
+            color: #a0a7af !important; font: 64px/1 sans-serif;
+            text-decoration: none !important;
+        }
+        .jd-side-page:hover { color: #e65100 !important; }
+        #jd-side-prev { left: 8px; }
+        #jd-side-next { right: 8px; }
+        @media (max-width: 1200px) {
+            .jd-side-page { display: none; }
+        }
         #jd-page-nav {
             position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
             display: flex; gap: 12px; z-index: 9000;
         }
         .jd-page-btn {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.1)) !important;
+            background: rgba(255, 255, 255, 0.97) !important;
             backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.5) !important;
             border-top: 1px solid rgba(255, 255, 255, 0.8) !important;
@@ -222,7 +314,7 @@
             text-decoration: none !important; display: flex; align-items: center; justify-content: center;
         }
         .jd-page-btn:hover:not(.disabled) {
-            background: rgba(255, 255, 255, 0.6) !important;
+            background: #fff !important;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1), inset 0 1px 2px rgba(255, 255, 255, 0.9) !important;
             color: #e65100 !important;
         }
@@ -233,7 +325,7 @@
             display: none; /* 默认隐藏，有数据时加上 .show 类显示 */
             align-items: center; justify-content: center;
             padding: 0 18px; color: #111; font-size: 15px; font-weight: 900;
-            background: rgba(255, 255, 255, 0.3); border-radius: 20px;
+            background: rgba(255, 255, 255, 0.97); border-radius: 20px;
             backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.4) !important;
             box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.6) !important;
@@ -327,6 +419,121 @@
         .jd-radio-item:hover { color: #e65100; }
         .jd-radio-item input[type="radio"] { accent-color: #e65100; cursor: pointer; margin: 0; }
         .jd-empty-state { text-align: center; color: #888; font-size: 14px; font-weight: 600; padding: 20px 0; }
+
+        /* 其他页面沿用首页的内容列和阅读节奏；不裁切完整评论。 */
+        html:not(.jd-home-page) main {
+            width: 100% !important;
+            max-width: 960px !important;
+            flex: 0 1 960px !important;
+            margin: 0 auto !important;
+            padding: 24px 32px 104px !important;
+            box-sizing: border-box !important;
+            min-width: 0;
+        }
+        .jd-article-page main {
+            max-width: 860px !important;
+            flex-basis: 860px !important;
+        }
+        html:not(.jd-home-page) main > .container,
+        html:not(.jd-home-page) main > .container-fluid,
+        html:not(.jd-home-page) main #content {
+            width: 100% !important; max-width: 100% !important;
+            margin: 0 !important; padding: 0 !important;
+            box-sizing: border-box;
+        }
+        html:not(.jd-home-page) main .post-h1 {
+            padding: 0 !important; margin: 0 0 16px !important;
+            font-size: clamp(24px, 3vw, 32px);
+            line-height: 1.45; font-weight: 750; overflow-wrap: anywhere;
+        }
+        html:not(.jd-home-page) main .post-meta {
+            margin: 0 0 20px !important; color: #858b93;
+            font-size: 13px; line-height: 1.6;
+        }
+        html:not(.jd-home-page) main .post-content {
+            font-size: 16px; line-height: 1.85; overflow-wrap: anywhere;
+        }
+        html:not(.jd-home-page) main .post-content p { margin: 0 0 18px; }
+        html:not(.jd-home-page) main .post-content :is(img, video),
+        html:not(.jd-home-page) #jandan-app video {
+            max-width: 100% !important; height: auto; border-radius: 8px;
+        }
+        html:not(.jd-home-page) main .post-content blockquote {
+            margin: 20px 0; padding: 14px 18px; background: #f7f8fa;
+            border-radius: 8px; color: #626973;
+        }
+        html:not(.jd-home-page) #jandan-app {
+            width: 100%; min-width: 0; margin-top: 24px;
+            font-size: 15px; line-height: 1.75; overflow-wrap: anywhere;
+        }
+        html:not(.jd-home-page) .jdcomment-row {
+            margin: 0 !important; padding: 18px 0 !important;
+        }
+        html:not(.jd-home-page) .jdcomment-row + .jdcomment-row {
+            border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
+        }
+        html:not(.jd-home-page) .jdcomment-content {
+            padding: 8px 0 !important; line-height: 1.75 !important;
+            overflow-wrap: anywhere;
+        }
+        html:not(.jd-home-page) .jdcomment-content :is(img, video) {
+            max-width: 100% !important; height: auto; border-radius: 8px;
+        }
+        html:not(.jd-home-page) .jdcomment-author,
+        html:not(.jd-home-page) .jdcomment-function {
+            color: #858b93; font-size: 12px; line-height: 1.6;
+        }
+        html:not(.jd-home-page) .comment-form button {
+            width: auto !important; max-width: 100%;
+            margin: 10px 0 !important; padding: 8px 20px;
+            border-radius: 16px; background: #f7f8fa; color: #333;
+        }
+        html:not(.jd-home-page) :is(.commentlist, .comment-list) {
+            padding-left: 0; margin-bottom: 24px; list-style: none;
+        }
+        html:not(.jd-home-page) :is(.commentlist, .comment-list) > li {
+            padding: 18px 0 !important; margin: 0 !important;
+        }
+        html:not(.jd-home-page) :is(.commentlist, .comment-list) > li + li {
+            border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
+        }
+        html:not(.jd-home-page) main :is(textarea, .form-control, .form-select) {
+            max-width: 100%; box-sizing: border-box; border-radius: 8px;
+            border: 1px solid #e2e5e9 !important;
+            background: #fff; color: #333; padding: 10px 12px;
+        }
+        html:not(.jd-home-page) main :is(textarea, .form-control, .form-select):focus {
+            border-color: #b7bec7 !important;
+            outline: 2px solid rgba(183, 190, 199, 0.25) !important;
+            outline-offset: 2px;
+        }
+        html:not(.jd-home-page) main :is(.page-nav, .cp-pagenavi) {
+            display: flex; flex-wrap: wrap; align-items: center;
+            justify-content: center; gap: 8px; padding: 16px 0;
+        }
+        html:not(.jd-home-page) main :is(.page-nav, .cp-pagenavi) a {
+            border-radius: 16px; background: #f7f8fa;
+            padding: 6px 12px; text-decoration: none; color: #333;
+        }
+        #jd-quick-nav { background: rgba(255, 255, 255, 0.97); }
+        @media (min-width: 721px) and (max-width: 1180px) {
+            html:not(.jd-home-page) main {
+                padding-right: 100px !important;
+            }
+        }
+        @media (max-width: 720px) {
+            html:not(.jd-home-page) main { padding: 16px 16px 104px !important; }
+            #jd-quick-nav {
+                top: 8px; bottom: auto; right: 8px; left: 8px;
+                flex-direction: row; justify-content: flex-start;
+                overflow-x: auto; overflow-y: hidden; max-height: none;
+                padding: 6px; gap: 2px; border-radius: 14px;
+            }
+            #jd-quick-nav .jd-glass-btn { width: auto; flex: 0 0 auto; padding: 7px 10px; }
+            #jd-quick-nav .jd-glass-divider { display: none; }
+            html body main { margin-top: 56px !important; }
+            #jd-settings-modal { width: min(320px, calc(100vw - 32px)); box-sizing: border-box; }
+        }
     `;
     document.head.appendChild(style);
 
@@ -527,7 +734,7 @@
             const match = path.match(/^\/page\/(\d+)/);
             if (match) currentPage = parseInt(match[1]);
 
-            if (currentPage > 1) prevUrl = '/page/' + (currentPage - 1);
+            if (currentPage > 1) prevUrl = currentPage === 2 ? '/' : '/page/' + (currentPage - 1);
             nextUrl = '/page/' + (currentPage + 1);
             displayPage = currentPage;
         }
@@ -558,6 +765,28 @@
 
         window.jdPrevUrl = prevUrl;
         window.jdNextUrl = nextUrl;
+
+        // 首页侧边箭头与底部分页共用链接，补齐原站第二页缺失的上一页。
+        if (isHomePage) {
+            [['prev', prevUrl, '‹', '上一页'], ['next', nextUrl, '›', '下一页']].forEach(([direction, url, label, title]) => {
+                const id = 'jd-side-' + direction;
+                let arrow = document.getElementById(id);
+                if (!url) {
+                    if (arrow) arrow.remove();
+                    return;
+                }
+                if (!arrow) {
+                    arrow = document.createElement('a');
+                    arrow.id = id;
+                    arrow.className = 'jd-side-page';
+                    arrow.textContent = label;
+                    arrow.setAttribute('aria-label', title);
+                    arrow.title = title;
+                    document.body.appendChild(arrow);
+                }
+                if (arrow.getAttribute('href') !== url) arrow.setAttribute('href', url);
+            });
+        }
 
         // 核心修复：只创建一次 DOM，后续仅修改属性
         let pageNav = document.getElementById('jd-page-nav');
